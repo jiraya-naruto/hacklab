@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: my-go-app
-    env: docker
-    plan: free
-    dockerfilePath: ./Dockerfile
-    envVars:
-      - key: PORT
-        value: "3000"
