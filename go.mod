@@ -1,6 +1,6 @@
 module custom-browser
 
-go 1.23.2
+go 1.21
 
 require (
 	github.com/chromedp/cdproto v0.0.0-20241030022559-23c28aebe8cb // indirect
