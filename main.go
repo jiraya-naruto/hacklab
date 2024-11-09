@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -23,6 +25,22 @@ func GetClientIP(r *http.Request) string {
 	// Remove port from IP if it exists (e.g., "192.168.1.1:8080" -> "192.168.1.1")
 	clientIP = strings.Split(clientIP, ":")[0]
 	return clientIP
+}
+
+// openURLInBrowser opens a URL in the default browser based on the operating system.
+func openURLInBrowser(url string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("cmd", "/C", "start", url)
+	case "linux":
+		cmd = exec.Command("xdg-open", url)
+	case "darwin":
+		cmd = exec.Command("open", url)
+	default:
+		return fmt.Errorf("unsupported platform")
+	}
+	return cmd.Start()
 }
 
 // chromedpTask runs a ChromeDP task to open a specified URL and keeps it open for a duration
@@ -58,14 +76,19 @@ func chromedpTask(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel = chromedp.NewContext(ctx)
 	defer cancel()
 
-	// Run the ChromeDP task
+	// Run the ChromeDP task in the background
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(url),
 	)
 	if err != nil {
-		http.Error(w, "Failed to load page", http.StatusInternalServerError)
-		log.Println("Failed to load page:", err)
-		return
+		log.Println("Failed to load page using chromedp, attempting to use default browser:", err)
+		// If chromedp fails, attempt to open the URL in the default browser
+		err := openURLInBrowser(url)
+		if err != nil {
+			http.Error(w, "Failed to open browser", http.StatusInternalServerError)
+			log.Println("Failed to open browser:", err)
+			return
+		}
 	}
 
 	// Keep the page open for a specific duration (e.g., 2 minutes)
