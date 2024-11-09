@@ -1,5 +1,5 @@
 # Use an official Golang image as the base
-FROM golang:1.20
+FROM golang:1.21
 
 # Install dependencies, including Chrome (or Chromium)
 RUN apt-get update && apt-get install -y chromium
