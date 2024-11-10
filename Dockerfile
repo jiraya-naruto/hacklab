@@ -1,28 +1,46 @@
-# Use an official Golang image as the base
-FROM golang:1.21
+# Start from a lightweight official Golang image
+FROM golang:1.21-alpine AS builder
 
-# Install dependencies, including Chrome (or Chromium)
-RUN apt-get update && apt-get install -y chromium
+# Install dependencies for Chrome
+RUN apk add --no-cache --update \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy your Go module files and download dependencies
-COPY go.mod ./
-COPY go.sum ./
+# Copy the Go module files and download dependencies
+COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of your Go app code into the container
+# Copy the entire project into the container
 COPY . .
 
-# Ensure main.go is in the /app directory
-RUN ls -la /app  # This will print the directory contents to help with debugging
+# Build the Go application
+RUN go build -o app .
 
-# Build your Go app
-RUN go build -o app main.go  # Specify main.go to make sure it targets the correct file
+# Start a new, smaller image for deployment
+FROM alpine:latest
 
-# Expose the port your application listens on
-EXPOSE 3000
+# Install Chrome runtime dependencies
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
 
-# Run your app
+# Copy the compiled application from the builder
+COPY --from=builder /app/app /app
+WORKDIR /app
+
+# Expose the application’s port (change this if your app uses a different port)
+EXPOSE 8080
+
+# Run the application
 CMD ["./app"]
