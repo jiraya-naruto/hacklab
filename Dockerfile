@@ -1,5 +1,5 @@
 # Start from a lightweight official Golang image
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Install dependencies for Chrome
 RUN apk add --no-cache --update \
@@ -40,7 +40,7 @@ COPY --from=builder /app/app /app
 WORKDIR /app
 
 # Expose the application’s port (change this if your app uses a different port)
-EXPOSE 8080
+EXPOSE 3000
 
 # Run the application
 CMD ["./app"]
